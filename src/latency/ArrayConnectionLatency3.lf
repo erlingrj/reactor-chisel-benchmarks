@@ -1,0 +1,54 @@
+target Chisel {
+    timeout : 1 usec
+}
+
+preamble {=
+=}
+
+reactor Source {
+    @array(length=256)
+    output out: {=UInt(32.W)=}
+
+    timer t(10 nsec, 2 usec)
+
+    reaction(t) -> out {=
+        val wrPort = lf_set_array(out, 0.U, 256.U)
+        
+        val dataToSend = VecInit(Seq.tabulate(256)(i => i.U))
+        val cnt = RegInit(0.U(8.W))
+        wrPort.valid := true.B
+        wrPort.bits.data := dataToSend(cnt)
+        when (wrPort.fire) {
+            cnt := cnt + 1.U
+        }
+        reactionDone := (cnt === 255.U) && wrPort.fire
+    =}
+}
+
+reactor Sink {
+    @array(length=256)
+    input in: {=UInt(32.W)=}
+
+    reaction(in) {=
+        val rdPort = lf_get_array(in, 0.U, 256.U)
+        rdPort.ready := true.B
+        val expData = VecInit(Seq.tabulate(256)(i => i.U))
+        val cnt = RegInit(0.U(8.W))
+        when (rdPort.fire) {
+            assert(rdPort.bits.data === expData(cnt))
+            cnt := cnt + 1.U
+
+            when (cnt === 255.U) {
+                printf("ArrayConnectionLatency3.lf=%d\n", lf_time_physical() - lf_time_logical())
+            }
+        }
+        reactionDone := rdPort.fire && cnt === 255.U
+    =}
+}
+
+main reactor {
+    si = new Sink()
+    so = new Source()
+
+    so.out -> si.in
+}

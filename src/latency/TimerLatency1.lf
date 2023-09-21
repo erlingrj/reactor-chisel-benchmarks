@@ -1,0 +1,11 @@
+target Chisel {
+    timeout: 1 usec
+}
+
+main reactor {
+    timer t(10 nsec, 1 usec)
+
+    reaction(t) {=
+        printf("TimerLatency1.lf=%d\n", lf_time_physical() - lf_time_logical())
+    =}
+}

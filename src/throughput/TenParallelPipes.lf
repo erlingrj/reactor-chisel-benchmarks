@@ -1,0 +1,64 @@
+target Chisel {
+    timeout: 10 usec
+};
+
+reactor Source {
+    output out: {=UInt(8.W)=}
+    state cnt: {=UInt(8.W)=}
+
+    timer t(0,1 nsec)
+
+    reaction(t) -> out {=
+        lf_set(out, lf_read(cnt))
+        lf_write(cnt, lf_read(cnt) + 1.U)
+    =}
+}
+
+
+reactor Middle {
+    input in: {=UInt(8.W)=}
+    output out: {=UInt(8.W)=}
+
+    reaction(in) -> out {=
+        lf_set(out, lf_get(in) + 1.U)
+    =}
+}
+
+reactor Sink {
+    input in: {=UInt(8.W)=}
+
+    state cnt: {=UInt(32.W)=}
+
+    reaction(in) {=
+        lf_write(cnt, lf_read(cnt) + 1.U)
+    =}
+
+    reaction(shutdown) {=
+       printf("Throughput=%d/%d\n", lf_read(cnt), lf_time_physical())
+    =}
+}
+
+reactor Pipeline {
+    s = new Source()
+    m1 = new Middle()
+    m2 = new Middle()
+    m3 = new Middle()
+    m4 = new Middle()
+    m5 = new Middle()
+    si = new Sink()
+    m1.out, m2.out, m3.out, m4.out, m5.out -> m2.in, m3.in, m4.in, m5.in, si.in
+    s.out -> m1.in
+}
+
+main reactor {
+    p1 = new Pipeline()
+    p2 = new Pipeline()
+    p3 = new Pipeline()
+    p4 = new Pipeline()
+    p5 = new Pipeline()
+    p6 = new Pipeline()
+    p7 = new Pipeline()
+    p8 = new Pipeline()
+    p9 = new Pipeline()
+    p10 = new Pipeline()
+}

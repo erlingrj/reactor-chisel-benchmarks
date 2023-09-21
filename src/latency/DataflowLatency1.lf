@@ -1,0 +1,42 @@
+target Chisel {
+    timeout: 1 usec
+};
+
+
+
+reactor Source {
+    timer t(10 nsec, 1 usec)
+    output out: {=UInt(32.W)=}
+
+    state cnt: {=UInt(32.W)=}
+
+    reaction(t) -> out {=
+        lf_set(out, lf_read(cnt))
+        lf_write(cnt, lf_read(cnt) + 1.U)
+    =}
+}
+
+reactor Middle {
+    input in: {=UInt(32.W)=}
+    output out: {=UInt(32.W)=}
+
+    reaction(in) -> out {=
+        lf_set(out, lf_get(in) + 1.U)
+    =}
+}
+
+reactor Sink {
+    input in: {=UInt(32.W)=}
+
+    reaction(in) {=
+        printf("DataflowLatency1.lf=%d\n", lf_time_physical() - lf_time_logical())
+    =}
+}
+
+main reactor {
+    s = new Source()
+    m = new Middle()
+    si = new Sink()
+
+    s.out, m.out -> m.in, si.in
+}

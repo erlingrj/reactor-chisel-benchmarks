@@ -1,0 +1,42 @@
+target Codesign {
+    fpgaBoard: "ZedBoard"
+}
+
+
+reactor Software {
+    timer t(0, 10 msec)
+    output out: uint32_t[1024]
+
+    state cnt:int = 0
+
+    reaction(t) -> out {=
+        out.set(cnt);
+        cnt++;
+    =}
+}
+
+reactor Hardware {
+    @array(length=1024)
+    input in: {=UInt(32.W)=}
+
+    @external
+    output dummyOut: {=UInt(1.W)=}
+
+    reaction(in) -> dummyOut {=
+        val readPort = lf_get_array(in, 0.U, 1024.U)
+        readPort.ready := true.B
+
+        val cnt = RegInit(0.U(10.W))
+        when(readPort.fire) {
+            lf_set(dummyOut, readPort.bits.data)
+        }
+        reactionDone := cnt === 1024.U
+    =}
+}
+
+main reactor {
+    sw = new Software()
+    @fpga
+    hw = new Hardware()
+    sw.out -> hw.in
+}

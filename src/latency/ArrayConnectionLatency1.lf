@@ -1,0 +1,43 @@
+target Chisel {
+    timeout : 1 usec
+}
+
+reactor Source {
+    @array(length=256)
+    output out: {=UInt(32.W)=}
+
+    timer t(10 nsec, 2 usec)
+
+    reaction(t) -> out {=
+        val wrPort = lf_set_array(out, 42.U, 1.U)
+
+        wrPort.valid := true.B
+        wrPort.bits.data := 42.U
+
+        reactionDone := wrPort.fire
+    =}
+}
+
+reactor Sink {
+    @array(length=256)
+    input in: {=UInt(32.W)=}
+
+    reaction(in) {=
+        val rdPort = lf_get_array(in, 42.U, 1.U)
+        rdPort.ready := true.B
+
+        when (rdPort.fire) {
+            assert(rdPort.bits.data === 42.U)
+            printf("ArrayConnectionLatency1.lf=%d\n", lf_time_physical() - lf_time_logical())
+        }
+        
+        reactionDone := rdPort.fire
+    =}
+}
+
+main reactor {
+    si = new Sink()
+    so = new Source()
+
+    so.out -> si.in
+}

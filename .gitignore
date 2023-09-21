@@ -1,0 +1,8 @@
+.metals/
+.scala-build/
+bin/
+codesign-gen/
+results/
+src-gen/
+target/
+.vscode

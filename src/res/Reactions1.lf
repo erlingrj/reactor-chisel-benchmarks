@@ -1,0 +1,16 @@
+target Chisel
+
+reactor Timer {
+    @external
+    input dummyIn: {=UInt(1.W)=}
+    @external
+    output dummyOut: {=UInt(1.W)=}
+    timer t1(0, 100 usec)
+    
+    reaction(t1) dummyIn-> dummyOut {=
+        lf_set(dummyOut, lf_get(dummyIn))
+    =}
+}
+main reactor {
+    t1 = new Timer()
+}

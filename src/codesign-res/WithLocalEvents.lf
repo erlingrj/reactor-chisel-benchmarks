@@ -1,0 +1,36 @@
+target Codesign {
+    fpgaBoard: "ZedBoard"
+}
+
+
+reactor Software {
+    timer t(0, 10 msec)
+    output out: uint32_t
+
+    state cnt:int = 0
+
+    reaction(t) -> out {=
+        out.set(cnt);
+        cnt++;
+    =}
+}
+
+reactor Hardware {
+    @external
+    output dummyOut: {=UInt(1.W)=}
+    timer t(0, 20 msec)
+
+    input in: {=UInt(32.W)=}
+
+    reaction(t, in) -> dummyOut {=
+        lf_set(dummyOut, lf_get(in)(0))
+    =}
+}
+
+
+main reactor {
+    sw = new Software()
+    @fpga
+    hw = new Hardware()
+    sw.out -> hw.in
+}

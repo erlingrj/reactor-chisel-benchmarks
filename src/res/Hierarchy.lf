@@ -1,0 +1,18 @@
+target Chisel
+
+reactor Sink {
+    timer t(0, 1 msec)
+    @external
+    output ext: {=UInt(1.W)=}
+    reaction(t) -> ext {=
+        lf_set(ext, 1.U)
+    =}
+}
+
+reactor Wrapper {
+    sink = new Sink()
+}
+
+main reactor {
+    w = new Wrapper()
+}

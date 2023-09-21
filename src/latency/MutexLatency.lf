@@ -1,0 +1,17 @@
+target Chisel {
+    timeout: 1 usec
+}
+
+
+main reactor {
+    timer t(10 nsec, 2 usec)
+
+    state dummy: {=UInt(8.W)=}
+    reaction(t) {=
+       lf_write(dummy, 2.U) 
+    =}
+
+    reaction(t) {=
+        printf("MutexLatency.lf=%d\n", lf_time_physical() - lf_time_logical())
+    =}
+}

@@ -1,0 +1,46 @@
+target Codesign {
+    fpgaBoard: "ZedBoard"
+}
+
+
+reactor Software {
+    timer t(0, 10 msec)
+    output out1: uint32_t
+    output out2: uint32_t
+
+    state cnt:int = 0
+
+    reaction(t) -> out1 {=
+        out1.set(cnt);
+        cnt++;
+    =}
+    reaction(t) -> out2 {=
+        out2.set(cnt);
+        cnt++;
+    =}
+}
+
+reactor Hardware {
+    @external
+    output dummyOut: {=UInt(1.W)=}
+
+    input in1: {=UInt(32.W)=}
+    input in2: {=UInt(32.W)=}
+
+    reaction(in1) -> dummyOut {=
+        printf("in1 got %d\n", lf_get(in1))
+        lf_set(dummyOut, lf_get(in1)(0))
+    =}
+    reaction(in2) -> dummyOut {=
+        printf("in2 got %d\n", lf_get(in2))
+        lf_set(dummyOut, lf_get(in2)(0))
+    =}
+}
+
+
+main reactor {
+    sw = new Software()
+    @fpga
+    hw = new Hardware()
+    sw.out1, sw.out2 -> hw.in1, hw.in2
+}
