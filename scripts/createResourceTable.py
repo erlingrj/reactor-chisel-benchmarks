@@ -101,5 +101,5 @@ if __name__ == "__main__":
     print(latex_table)
     with open(os.path.join(directory, "resource_table.tex"), 'w') as file:
         file.write(latex_table)
-    with open(os.path.join(directory, "../resource_table.tex"), 'w') as file:
+    with open(os.path.join(directory, "../../../tables/resource_table.tex"), "w") as file:
         file.write(latex_table)

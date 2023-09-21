@@ -2,6 +2,7 @@
 
 import os
 import sys
+import re
 
 def read_results(directory, selected_tests):
     """Reads the results from the files in the given directory for selected tests."""
@@ -98,5 +99,5 @@ if __name__ == "__main__":
     print(latex_table)
     with open(os.path.join(directory, "resource_table_codesign.tex"), 'w') as file:
         file.write(latex_table)
-    with open(os.path.join(directory, "../resource_table_codesign.tex"), 'w') as file:
+    with open(os.path.join(directory, "../../../tables/resource_table_codesign.tex"), "w") as file:
         file.write(latex_table)

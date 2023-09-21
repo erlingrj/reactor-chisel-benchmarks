@@ -41,7 +41,7 @@ def main(directory):
     table = create_latex_table(results)
     with open(os.path.join(directory, "throughput_table.tex"), "w") as f:
         f.write(table)
-    with open(os.path.join(directory, "../throughput_table.tex"), "w") as f:
+    with open(os.path.join(directory, "../../../tables/throughput_table.tex"), "w") as f:
         f.write(table)
 
 
