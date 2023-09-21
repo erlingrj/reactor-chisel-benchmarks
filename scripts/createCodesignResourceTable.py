@@ -32,13 +32,11 @@ def gen_test_name(name):
         return "LUTs"
     elif name == "FF":
         return "Flip flops"
-    elif name == "BRAM":
-        return "BRAMs (Kbit)"
     elif name == "FMAX":
         return "Fmax [MHz]"
 
 def gen_bench_name(name):
-    return name.replace("txt", "lf")
+    return name.replace(".txt", "")
 
 def testname_sort_key(filename):
      # Split the name and the extension
@@ -91,7 +89,7 @@ if __name__ == "__main__":
         print(f"Directory '{directory}' does not exist!")
         sys.exit(1)
 
-    selected_tests = ("LUT", "FF", "BRAM", "Delay")
+    selected_tests = ("LUT", "FF", "Delay")
 
     results = read_results(directory, selected_tests)
     latex_table = generate_latex_table(results)

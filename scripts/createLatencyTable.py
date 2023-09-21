@@ -35,7 +35,7 @@ def main(directory):
             result = extract_results_from_file(path)
             if result != None:
                 test_name = os.path.splitext(file_name)[0]  # Remove .txt extension to get the test name
-                results[f"{test_name}.lf"] = result
+                results[f"{test_name}"] = result
 
     table = create_latex_table(results)
     with open(os.path.join(directory, "latency_table.tex"), "w") as f:

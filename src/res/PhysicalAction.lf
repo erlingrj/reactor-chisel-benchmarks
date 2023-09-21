@@ -3,15 +3,10 @@ target Chisel;
 reactor Timer {
     @external
     output dummy: {=UInt(1.W)=}
-    timer t1(0, 100 usec)
-    timer t2(0, 200 usec)
     physical action a
-    reaction(t1,t2) -> dummy {=
-        lf_set(dummy, 1.U)
-        printf("%d\n", lf_time_logical())
-    =}
-    reaction(a) -> dummy{=
-        lf_set(dummy, 0.U)
+    timer t(0, 100 usec)
+    reaction(a, t) -> dummy{=
+        lf_set(dummy, !lf_get(dummy))
     =}
 }
 main reactor {

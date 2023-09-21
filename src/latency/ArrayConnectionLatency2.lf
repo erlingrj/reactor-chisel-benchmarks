@@ -11,10 +11,9 @@ reactor Source {
     reaction(t) -> out {=
         val wrPort = lf_set_array(out, 0.U, 256.U)
         
-        val dataToSend = VecInit(Seq.tabulate(256)(i => i.U))
         val cnt = RegInit(0.U(8.W))
         wrPort.valid := true.B
-        wrPort.bits.data := dataToSend(cnt)
+        wrPort.bits.data := lf_time_physical()
         when (wrPort.fire) {
             cnt := cnt + 1.U
         }
@@ -27,12 +26,11 @@ reactor Sink {
     input in: {=UInt(32.W)=}
 
     reaction(in) {=
-        val rdPort = lf_get_array(in, 42.U, 1.U)
+        val rdPort = lf_get_array(in, 0.U, 1.U)
         rdPort.ready := true.B
 
         when (rdPort.fire) {
-            assert(rdPort.bits.data === 42.U)
-            printf("ArrayConnectionLatency2.lf=%d\n", lf_time_physical() - lf_time_logical())
+            printf("ArrayConnectionLatency2.lf=%d\n", lf_time_physical() - rdPort.bits.data)
         }
         
         reactionDone := rdPort.fire

@@ -1,0 +1,23 @@
+target Chisel;
+
+reactor Timer {
+    @external
+    output dummy: {=UInt(1.W)=}
+    physical action a1
+    physical action a2
+    physical action a3
+    physical action a4
+    physical action a5
+    physical action a6
+    physical action a7
+    physical action a8
+    physical action a9
+    physical action a10
+    timer t(0, 100 usec)
+    reaction(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, t) -> dummy{=
+        lf_set(dummy, !lf_get(dummy))
+    =}
+}
+main reactor {
+    t1 = new Timer()
+}

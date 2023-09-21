@@ -35,8 +35,14 @@ reactor Sink {
 
 main reactor {
     s = new Source()
-    m = new Middle()
+    m1 = new Middle()
+    m2 = new Middle()
+    m3 = new Middle()
+    m4 = new Middle()
+    m5 = new Middle()
+    m6 = new Middle()
+    m7 = new Middle()
+    m8 = new Middle()
     si = new Sink()
-
-    s.out, m.out -> m.in, si.in
+    s.out, m1.out, m2.out, m3.out, m4.out, m5.out, m6.out, m7.out, m8.out -> m1.in, m2.in, m3.in, m4.in, m5.in, m6.in, m7.in, m8.in, si.in
 }

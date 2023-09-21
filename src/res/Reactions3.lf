@@ -2,19 +2,17 @@ target Chisel
 
 reactor Timer {
     @external
-    input dummyIn: {=UInt(1.W)=}
-    @external
     output dummyOut: {=UInt(1.W)=}
     timer t1(0, 100 usec)
     
-    reaction(t1) dummyIn-> dummyOut {=
-        lf_set(dummyOut, lf_get(dummyIn))
+    reaction(t1) -> dummyOut {=
+        lf_set(dummyOut, !lf_get(dummyOut))
     =}
-    reaction(t1) dummyIn-> dummyOut {=
-        lf_set(dummyOut, !lf_get(dummyIn))
+    reaction(t1) -> dummyOut {=
+        lf_set(dummyOut, !lf_get(dummyOut))
     =}
-    reaction(t1) dummyIn-> dummyOut {=
-        lf_set(dummyOut, lf_get(dummyIn))
+    reaction(t1) -> dummyOut {=
+        lf_set(dummyOut, !lf_get(dummyOut))
     =}
 }
 main reactor {

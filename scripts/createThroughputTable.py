@@ -8,7 +8,7 @@ def extract_results_from_file(file_path):
     with open(file_path, 'r') as f:
         for line in f:
             res = (line.split("=")[1].strip()).split("/")
-            return f"{int(res[1])/int(res[0]):.2f}"
+            return f"{int(res[1])/int(res[0]):.0f}"
     return None
 
 def create_latex_table(data):

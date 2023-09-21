@@ -12,7 +12,7 @@ reactor Source {
         val wrPort = lf_set_array(out, 42.U, 1.U)
 
         wrPort.valid := true.B
-        wrPort.bits.data := 42.U
+        wrPort.bits.data := lf_time_physical()
 
         reactionDone := wrPort.fire
     =}
@@ -27,8 +27,7 @@ reactor Sink {
         rdPort.ready := true.B
 
         when (rdPort.fire) {
-            assert(rdPort.bits.data === 42.U)
-            printf("ArrayConnectionLatency1.lf=%d\n", lf_time_physical() - lf_time_logical())
+            printf("ArrayConnectionLatency1.lf=%d\n", lf_time_physical() - rdPort.bits.data)
         }
         
         reactionDone := rdPort.fire

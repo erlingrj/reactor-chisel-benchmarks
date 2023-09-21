@@ -2,7 +2,6 @@ target Codesign {
     fpgaBoard: "ZedBoard"
 }
 
-
 reactor Software {
     timer t(0, 10 msec)
     output out: uint32_t
@@ -26,7 +25,6 @@ reactor Hardware {
         lf_set(dummyOut, lf_get(in)(0))
     =}
 }
-
 
 main reactor {
     sw = new Software()
