@@ -5,7 +5,7 @@ reactor Source {
     output out:{=UInt(32.W)=}
 
     @external
-    input in: {=UInt(5.W)=}
+    input in: {=UInt(11.W)=}
 
     reaction(startup) in -> out {=
         val wrPort = lf_set_array(out, lf_get(in), 1.U)
@@ -23,7 +23,7 @@ reactor Sink {
     output dummy :{=UInt(1.W)=}
 
     reaction(in) -> dummy {=
-        val rdPort = lf_get_array(in, 124.U, 1.U)
+        val rdPort = lf_get_array(in, 2000.U, 1.U)
         rdPort.ready := true.B
 
         when (rdPort.fire) {

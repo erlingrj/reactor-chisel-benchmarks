@@ -1,0 +1,72 @@
+target Codesign {
+  cmake-include: "opencv.cmake"
+}
+
+reactor GrayscaleFilter {
+  preamble {=
+    class Colour extends Bundle {
+      val r = UInt(8.W)
+      val g = UInt(8.W)
+      val b = UInt(8.W)
+    }
+  =}
+  @array(length=409600)
+  input imgRGB: {=UInt(32.W)=}
+  @array(length=409600)
+  output imgGray : {=UInt(8.W)=}
+
+  reaction(imgRGB) -> imgGray {=
+    val readPort = lf_get_array(imgRGB, 0.U, 409600.U)
+    val writePort = lf_set_array(imgGray, 0.U, 409600.U)
+    val cnt = RegInit(0.U(log2Ceil(409600).W))
+
+    val fire = readPort.valid && writePort.ready
+    when(fire) {
+      readPort.ready := true.B
+      writePort.valid := true.B
+      writePort.bits.data := readPort.bits.data.asTypeOf(new Colour).r
+      cnt := cnt + 1.U
+    }
+
+    reactionDone := cnt === 409600.U
+  =}
+}
+
+reactor CameraDriver {
+  preamble {=
+    #include <opencv2/v.hpp>
+  =}
+
+  output imgRGB: uint32_t[409600]
+  input imgGray: uint8_t[409600]
+
+  reaction(startup) -> imgRGB {=
+    std::array<uint32_t, 409600> img;
+    cv::Mat image = cv::imread("./img.jpg", cv::IMREAD_COLOR);
+    int idx = 0;
+    
+    for (int i = 0; i<image.rows; i++) {
+      for (int j = 0; j<image.cols; j++) {
+          unsigned char b = image.at<cv::Vec3b>(i, j)[0];
+          unsigned char g = image.at<cv::Vec3b>(i, j)[1];
+          unsigned char r = image.at<cv::Vec3b>(i, j)[2];
+          img[idx++] = r | (g << 8) | (b << 16);
+      }
+    }
+    imgRGB.set(std::move(img));
+  =}
+
+  reaction(imgGray) {=
+    reactor::log::Info() <<"Received gray image back";
+  =}
+}
+
+main reactor {
+  sw = new CameraDriver()
+
+  @fpga
+  hw = new GrayscaleFilter()
+
+  sw.imgRGB -> hw.imgRGB
+  hw.imgGray -> sw.imgGray
+}
