@@ -1,0 +1,70 @@
+target Cpp {
+  cmake-include: opencv.cmake
+}
+
+
+reactor CameraDriver {
+  private preamble {=
+    #include <opencv2/opencv.hpp>
+  =}
+
+  output imgRGB: uint32_t[409600]
+  input imgGray: uint8_t[409600]
+
+  reaction(startup) -> imgRGB {=
+    std::array<uint32_t, 409600> img;
+    cv::Mat image = cv::imread("./img.jpg", cv::IMREAD_COLOR);
+    int idx = 0;
+
+    reactor::log::Info() << "Image width rows=" <<image.rows <<", cols=" <<image.cols;
+    
+    for (int i = 0; i<image.rows; i++) {
+      for (int j = 0; j<image.cols; j++) {
+          unsigned char b = image.at<cv::Vec3b>(i, j)[0];
+          unsigned char g = image.at<cv::Vec3b>(i, j)[1];
+          unsigned char r = image.at<cv::Vec3b>(i, j)[2];
+          img[idx++] = r | (g << 8) | (b << 16);
+      }
+    }
+    reactor::log::Info() << "send it";
+    imgRGB.set(std::move(img));
+  =}
+
+  reaction(imgGray) {=
+    reactor::log::Info() <<"Received gray image back";
+    auto arr = *(imgGray.get());
+    cv::Mat grayscale_image(640, 640, CV_8U, arr.data());
+    cv::imwrite("gray.jpg", grayscale_image);
+  =}
+}
+
+reactor FpgaModel {
+  private preamble {=
+    #include <opencv2/opencv.hpp>
+  =}
+
+  input imgRGB: uint32_t[409600]
+  output imgGray: uint8_t[409600]
+
+  reaction(imgRGB) -> imgGray {=
+    auto in = *(imgRGB.get());
+    reactor::log::Info() << "FPGA model got it";
+    std::array<uint8_t, 409600> img;
+    reactor::log::Info() <<in[0] <<" " <<in[1];
+    for (int i = 0; i<409600; i++) {
+      uint32_t pixel = (*imgRGB.get())[i];
+      img[i] = (uint8_t) pixel;
+    }
+    reactor::log::Info() << "FPGA model send it bak";
+    imgGray.set(std::move(img));
+  =}
+}
+
+
+main reactor {
+  sw = new CameraDriver()
+  hw = new FpgaModel()
+
+  sw.imgRGB -> hw.imgRGB
+  hw.imgGray -> sw.imgGray
+}

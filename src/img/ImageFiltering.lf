@@ -1,49 +1,133 @@
 target Codesign {
-  cmake-include: "opencv.cmake"
+  cmake-include: "/home/erling/Documents/Papers/codesign-reactors/evaluation/src/img/opencv.cmake",
+  clock-period: 1 nsec
 }
 
-reactor GrayscaleFilter {
+reactor Filter {
   preamble {=
+    object imgSize {
+      val value = 640*640
+    }
     class Colour extends Bundle {
       val r = UInt(8.W)
       val g = UInt(8.W)
       val b = UInt(8.W)
     }
+    
+    class GrayScaleFilter extends Module {
+    val rgbIn = IO(Flipped(Decoupled(new Colour)))
+    val grayOut = IO(Decoupled(UInt(8.W)))
+
+    val s1_valid = RegInit(false.B)
+    val s1_r1Shifted = RegInit(0.U(8.W))
+    val s1_r2Shifted = RegInit(0.U(8.W))
+    val s1_g1Shifted = RegInit(0.U(8.W))
+    val s1_g2Shifted = RegInit(0.U(8.W))
+    val s1_b1Shifted = RegInit(0.U(8.W))
+    val s1_b2Shifted = RegInit(0.U(8.W))
+
+    val s2_valid = RegInit(false.B)
+    val s2_gray = RegInit(0.U(8.W))
+
+    rgbIn.ready := !s2_valid || grayOut.fire
+    grayOut.valid := s2_valid
+    grayOut.bits := s2_gray
+    s1_valid := rgbIn.fire
+
+    when(rgbIn.fire) {
+      // Stage 1
+      val rgb = rgbIn.bits
+      val (r,g,b) = (rgb.r, rgb.g, rgb.b)
+      s1_r1Shifted := (r >> 2).asUInt
+      s1_r2Shifted := (r >> 5).asUInt
+      s1_g1Shifted := (g >> 1).asUInt
+      s1_g2Shifted := (g >> 4).asUInt
+      s1_b1Shifted := (b >> 4).asUInt
+      s1_b2Shifted := (b >> 5).asUInt
+
+      // Stage 2
+      s2_valid := s1_valid
+      s2_gray := s1_r1Shifted + s1_r2Shifted + s1_g1Shifted + s1_g2Shifted + s1_b1Shifted + s1_b2Shifted
+      }
+    }
   =}
-  @array(length=409600)
-  input imgRGB: {=UInt(32.W)=}
-  @array(length=409600)
-  output imgGray : {=UInt(8.W)=}
 
-  reaction(imgRGB) -> imgGray {=
-    val readPort = lf_get_array(imgRGB, 0.U, 409600.U)
-    val writePort = lf_set_array(imgGray, 0.U, 409600.U)
-    val cnt = RegInit(0.U(log2Ceil(409600).W))
+  @array(length=409600)
+  input in: {=UInt(32.W)=}
+  @array(length=409600)
+  output out : {=UInt(8.W)=}
+  output done: {=UInt(1.W)=}
 
-    val fire = readPort.valid && writePort.ready
-    when(fire) {
-      readPort.ready := true.B
-      writePort.valid := true.B
-      writePort.bits.data := readPort.bits.data.asTypeOf(new Colour).r
+  reaction(in) -> out, done {=
+    val readPort = lf_get_array(in, 0.U, imgSize.value.U)
+    val writePort = lf_set_array(out, 0.U, imgSize.value.U)
+    val cnt = RegInit(0.U(log2Ceil(imgSize.value).W))
+
+    val filter = Module(new GrayScaleFilter())
+    readPort.ready := filter.rgbIn.ready
+    filter.rgbIn.valid := readPort.valid
+    filter.rgbIn.bits := readPort.bits.data.asTypeOf(new Colour)
+
+    writePort.valid := filter.grayOut.valid
+    writePort.bits.data := filter.grayOut.bits
+    filter.grayOut.ready := writePort.ready
+
+    when(writePort.fire) {
       cnt := cnt + 1.U
     }
-
-    reactionDone := cnt === 409600.U
+    when (cnt === imgSize.value.U) {
+      reactionDone := true.B 
+      lf_set(done, 1.U)
+    }.otherwise {
+      reactionDone := false.B
+    }
   =}
 }
 
-reactor CameraDriver {
-  preamble {=
-    #include <opencv2/v.hpp>
+reactor FPGA {
+  @array(length=409600)
+  input imgIn: {=UInt(32.W)=}
+  @array(length=409600)
+  output imgOut : {=UInt(8.W)=}
+
+  grayScale = new Filter()
+  timer t (0, 10 msec)
+
+  reaction(t) {=
+    printf("FPGA START AT %d\n", lf_time_physical())
   =}
 
-  output imgRGB: uint32_t[409600]
-  input imgGray: uint8_t[409600]
+  imgIn -> grayScale.in
+  grayScale.out -> imgOut
+    
+  reaction(grayScale.done) {=
+    printf("FPGA FINISED AT %d\n", lf_time_physical())
+  =}
+}
 
-  reaction(startup) -> imgRGB {=
-    std::array<uint32_t, 409600> img;
-    cv::Mat image = cv::imread("./img.jpg", cv::IMREAD_COLOR);
+reactor CameraDriver(rgbImgPath:string = "./img.jpg", grayImgPath:string="./gray.jpg") {
+  public preamble {=
+    #include <opencv2/opencv.hpp>
+    const unsigned imgRows = 640;
+    const unsigned imgCols = 640;
+    const unsigned imgSize = imgRows * imgCols;
+  =}
+
+  output imgOut: uint32_t[409600]
+  input imgIn: uint8_t[409600]
+
+  timer t (0, 10 msec)
+  reaction(t) -> imgOut {=
+    std::array<uint32_t, imgSize> img;
+    cv::Mat image = cv::imread(rgbImgPath, cv::IMREAD_COLOR);
     int idx = 0;
+
+
+    reactor::log::Info() << "Image width rows=" <<image.rows <<", cols=" <<image.cols;
+    if (image.rows*image.cols != imgSize) {
+      reactor::log::Error() <<"Image size must be 640x640";
+      exit(1);
+    }
     
     for (int i = 0; i<image.rows; i++) {
       for (int j = 0; j<image.cols; j++) {
@@ -53,20 +137,24 @@ reactor CameraDriver {
           img[idx++] = r | (g << 8) | (b << 16);
       }
     }
-    imgRGB.set(std::move(img));
+    reactor::log::Info() << "send it";
+    imgOut.set(std::move(img));
   =}
 
-  reaction(imgGray) {=
+  reaction(imgIn) {=
     reactor::log::Info() <<"Received gray image back";
+    auto arr = *(imgIn.get());
+    cv::Mat grayscale_image(imgRows, imgCols, CV_8U, arr.data());
+    cv::imwrite(grayImgPath, grayscale_image);
   =}
 }
 
-main reactor {
-  sw = new CameraDriver()
+main reactor(rgbImgPath:std::string = "./img.jpg", grayImgPath:std::string="./gray.jpg") {
+  sw = new CameraDriver(rgbImgPath={=std::string(rgbImgPath)=}, grayImgPath={=std::string(grayImgPath)=})
 
   @fpga
-  hw = new GrayscaleFilter()
+  hw = new FPGA()
 
-  sw.imgRGB -> hw.imgRGB
-  hw.imgGray -> sw.imgGray
+  sw.imgOut -> hw.imgIn
+  hw.imgOut -> sw.imgIn
 }
