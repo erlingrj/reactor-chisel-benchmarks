@@ -1,0 +1,3 @@
+[submodule "src/imgHandwritten"]
+	path = src/imgHandwritten
+	url = git@github.com:erlingrj/tidbitsGrayScaleFilter
