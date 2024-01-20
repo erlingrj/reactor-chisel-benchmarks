@@ -1,8 +1,6 @@
 set NAME $argv[1]
 echo Creating tables for : `$NAME`
 
-set EVAL $ROOT/evaluation
-
 # Throughput
 python3 scripts/createThroughputTable.py results/thru_$NAME
 

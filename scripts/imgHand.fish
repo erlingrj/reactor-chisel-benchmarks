@@ -9,8 +9,6 @@ end
 echo Writing results to `$DEST`
 mkdir -p $DEST
 
-set EVAL $ROOT/evaluation
-
 set proj src/imgHandwritten 
 pushd $proj
 
@@ -26,8 +24,8 @@ if not set -q _flag_nochar
     # Run OMX
     $OHMYXILINX/vivadocompile.sh ZedBoardWrapper.v clock xc7z020clg484-1
     # Copy results back
-    cp $BUILD_DIR/res.txt $EVAL/$DEST/img_hand.txt
-    cp $BUILD_DIR/util_report.txt $EVAL/$DEST/img_hand_util_report.txt
-    cp $BUILD_DIR/timing_report.txt $EVAL/$DEST/img_hand_timing_report.txt
+    cp $BUILD_DIR/res.txt $DEST/img_hand.txt
+    cp $BUILD_DIR/util_report.txt $DEST/img_hand_util_report.txt
+    cp $BUILD_DIR/timing_report.txt $DEST/img_hand_timing_report.txt
 end
 popd

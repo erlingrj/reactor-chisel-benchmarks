@@ -1,3 +1,6 @@
 [submodule "src/imgHandwritten"]
 	path = src/imgHandwritten
 	url = git@github.com:erlingrj/tidbitsGrayScaleFilter
+[submodule "lingua-franca"]
+	path = lingua-franca
+	url = git@github.com:erlingrj/lingua-franca.git

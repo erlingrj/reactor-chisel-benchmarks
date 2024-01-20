@@ -1,6 +1,6 @@
 target Codesign {
-  cmake-include: "/home/erling/Documents/Papers/codesign-reactors/evaluation/src/img/opencv.cmake",
-  clock-period: 1 nsec
+  cmake-include: "/home/erling/Documents/Papers/reactor-chisel/evaluation/src/img/opencv.cmake",
+  fpgaBoard: "VerilatedTester"
 }
 
 reactor Filter {
@@ -51,14 +51,12 @@ reactor Filter {
       }
     }
   =}
-
   @array(length=409600)
   input in: {=UInt(32.W)=}
   @array(length=409600)
   output out : {=UInt(8.W)=}
-  output done: {=UInt(1.W)=}
 
-  reaction(in) -> out, done {=
+  reaction(in) -> out {=
     val readPort = lf_get_array(in, 0.U, imgSize.value.U)
     val writePort = lf_set_array(out, 0.U, imgSize.value.U)
     val cnt = RegInit(0.U(log2Ceil(imgSize.value).W))
@@ -77,31 +75,10 @@ reactor Filter {
     }
     when (cnt === imgSize.value.U) {
       reactionDone := true.B 
-      lf_set(done, 1.U)
+      printf("Done @ %d\n", lf_time_physical())
     }.otherwise {
       reactionDone := false.B
     }
-  =}
-}
-
-reactor FPGA {
-  @array(length=409600)
-  input imgIn: {=UInt(32.W)=}
-  @array(length=409600)
-  output imgOut : {=UInt(8.W)=}
-
-  grayScale = new Filter()
-  timer t (0, 10 msec)
-
-  reaction(t) {=
-    printf("FPGA START AT %d\n", lf_time_physical())
-  =}
-
-  imgIn -> grayScale.in
-  grayScale.out -> imgOut
-    
-  reaction(grayScale.done) {=
-    printf("FPGA FINISED AT %d\n", lf_time_physical())
   =}
 }
 
@@ -121,7 +98,6 @@ reactor CameraDriver(rgbImgPath:string = "./img.jpg", grayImgPath:string="./gray
     std::array<uint32_t, imgSize> img;
     cv::Mat image = cv::imread(rgbImgPath, cv::IMREAD_COLOR);
     int idx = 0;
-
 
     reactor::log::Info() << "Image width rows=" <<image.rows <<", cols=" <<image.cols;
     if (image.rows*image.cols != imgSize) {
@@ -151,10 +127,8 @@ reactor CameraDriver(rgbImgPath:string = "./img.jpg", grayImgPath:string="./gray
 
 main reactor(rgbImgPath:std::string = "./img.jpg", grayImgPath:std::string="./gray.jpg") {
   sw = new CameraDriver(rgbImgPath={=std::string(rgbImgPath)=}, grayImgPath={=std::string(grayImgPath)=})
-
   @fpga
-  hw = new FPGA()
-
-  sw.imgOut -> hw.imgIn
-  hw.imgOut -> sw.imgIn
+  hw = new Filter()
+  sw.imgOut -> hw.in
+  hw.out-> sw.imgIn
 }
