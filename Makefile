@@ -1,10 +1,9 @@
-
 .phony: latency
 latency:
 	./scripts/latency.fish
 
 .phony: resources
-latency:
+resources:
 	./scripts/resources.fish
 	./scripts/codesignResources.fish
 
@@ -15,7 +14,7 @@ thru:
 .phony: all
 all: latency resources thru 
 
-.phony clean
+.phony: clean
 clean:
 	rm -f results/**/*txt
 	rm -f bin/*

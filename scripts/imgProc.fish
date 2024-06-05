@@ -1,21 +1,18 @@
+#!/usr/bin/fish
 argparse "n/nocompile" "c/nochar" "o/output=" -- $argv
 
 if set -q _flag_output
     set DEST $_flag_output
 else
-    set DEST results/res
+    set DEST results/imgProcLF
 end
 
 echo Writing results to `$DEST`
 mkdir -p $DEST
 
-set srcFile src/img/ImageFiltering.lf 
-
 # Compile
 if not set -q _flag_nocompile
-    sed -i "s/VerilatedTester/ZedBoard/g" "$srcFile"
     lingua-franca/bin/lfc $srcFile -c
-    sed -i "s/ZedBoard/VerilatedTester/g" "$srcFile"
 end
 
 # Do characterization

@@ -1,3 +1,5 @@
+#!/bin/fish
+
 set NAME $argv[1]
 echo Running test: `$NAME`
 

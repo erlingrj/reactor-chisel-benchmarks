@@ -1,5 +1,5 @@
 target Codesign {
-  cmake-include: "/home/erling/Documents/Papers/reactor-chisel/evaluation/src/img/opencv.cmake",
+  cmake-include: "/home/erling/dev/reactor-chisel-benchmarks/src/img/opencv.cmake",
   fpgaBoard: "VerilatedTester"
 }
 

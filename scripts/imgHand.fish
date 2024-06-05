@@ -1,9 +1,10 @@
+#!/usr/bin/fish
 argparse "n/nocompile" "c/nochar" "o/output=" -- $argv
 
 if set -q _flag_output
     set DEST $_flag_output
 else
-    set DEST results/res
+    set DEST results/imgProcHandd
 end
 
 echo Writing results to `$DEST`
